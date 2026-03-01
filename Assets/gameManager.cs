@@ -1,39 +1,56 @@
 using UnityEngine;
-using UnityEngine.SceneManagement; // Necessário para carregar cenas
+using UnityEngine.SceneManagement;
 
 public class gameManager : MonoBehaviour
 {
     public static gameManager instance;
-    public static int PlayerScore = 0; // (opcional, não usado)
 
     public GUISkin layout;
+
     [Header("Pontuação")]
     public int pontos = 0;
     public int recordePessoal = 0;
 
     [Header("Progresso da Fase")]
     public int blocosRestantes;
-    public GameObject vitoriaUI; // Pode ser usado para mostrar algo, mas vamos trocar de cena
 
     void Awake()
     {
+        // Mantém apenas uma instância e não destrói ao trocar de cena
         if (instance == null)
+        {
             instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
         else
+        {
             Destroy(gameObject);
+            return;
+        }
     }
 
-    void Start()
+    void OnEnable()
     {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    // Chamado automaticamente toda vez que uma cena nova carrega
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+    pontos = 0;
         blocosRestantes = FindObjectsOfType<Brick>().Length;
         recordePessoal = PlayerPrefs.GetInt("Recorde", 0);
-        Debug.Log("Blocos na fase: " + blocosRestantes);
+        Debug.Log("Cena carregada: " + scene.name + " | Blocos: " + blocosRestantes);
     }
 
-    public void GanharPonto(int quantidade)
+    public void GanharPonto()
     {
-        pontos += quantidade;
-        Debug.Log("Pontos: " + pontos);
+        pontos += 1;
 
         if (pontos > recordePessoal)
         {
@@ -42,31 +59,42 @@ public class gameManager : MonoBehaviour
             PlayerPrefs.Save();
             Debug.Log("Novo recorde: " + recordePessoal);
         }
+
+        Debug.Log("Pontos: " + pontos);
     }
 
-    public void BlocoDestruido(int pontosGanhos)
+    public void BlocoDestruido()
     {
-        GanharPonto(pontosGanhos);
+        GanharPonto();
         blocosRestantes--;
         Debug.Log("Bloco destruído! Restam: " + blocosRestantes);
 
-        // Se todos os blocos foram destruídos (fase completa)
-        if (blocosRestantes <= 0)
+        if (blocosRestantes <= 0){
+        Debug.Log("BLOCOS RESTANTESSSS: " + blocosRestantes);
+            ProximaFase();
+        }
+    }
+void ProximaFase()
+    {
+        int proximaFase = SceneManager.GetActiveScene().buildIndex + 1;
+
+        if (proximaFase < SceneManager.sceneCountInBuildSettings)
         {
-            CarregarFase2();
+            Debug.Log("Fase completa! Carregando próxima fase...");
+            SceneManager.LoadScene(proximaFase);
+        }
+        else
+        {
+            Debug.Log("Fim de jogo! Pontuação final: " + pontos);
+            // Aqui você pode carregar uma tela de vitória ou menu
         }
     }
 
-    void CarregarFase2()
-    {
-        Debug.Log("Fase completa! Carregando Fase 2...");
-        SceneManager.LoadScene("fase2"); // Certifique-se que a cena se chama "Fase2" e está no Build Settings
-    }
-
-    // Opcional: manter a exibição da pontuação
     void OnGUI()
     {
-        GUI.skin = layout;
+        if (layout != null)
+            GUI.skin = layout;
+
         GUI.Label(new Rect(Screen.width / 2 - 150 - 12, 20, 100, 100), "" + pontos);
     }
 }

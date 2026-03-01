@@ -11,7 +11,7 @@ public class Brick : MonoBehaviour
         {
             if (gameManager.instance != null)
             {
-                gameManager.instance.BlocoDestruido(pontos);
+                gameManager.instance.BlocoDestruido();
             }
             Destroy(gameObject);
         }
