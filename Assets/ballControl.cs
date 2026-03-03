@@ -6,8 +6,6 @@ public class ballControl : MonoBehaviour
     [Header("Configurações Gerais")]
     public float speed = 10f;
 
-    public GameObject playerPaddle; // opcional, mas usamos tag
-
     private Rigidbody2D rb;
     private Vector2 startPosition;
 
@@ -16,6 +14,7 @@ public class ballControl : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         rb.gravityScale = 0f;
+
         startPosition = transform.position;
         Launch();
     }
@@ -29,54 +28,47 @@ public class ballControl : MonoBehaviour
     {
         if (other.CompareTag("BottomWall"))
         {
+            gameManager.instance.PerderVida(); // 🔥 perde vida
             ResetPuck();
         }
     }
 
-   void OnCollisionEnter2D(Collision2D col)
-{
-    Debug.Log("Colidiu com: " + col.gameObject.name);
-
-    if (col.gameObject.CompareTag("Player"))
+    void OnCollisionEnter2D(Collision2D col)
     {
-        // Lógica do paddle (igual)
-        float offset = transform.position.x - col.transform.position.x;
-        float width = col.collider.bounds.size.x;
-        float hitFactor = offset / width;
-        Vector2 dir = new Vector2(hitFactor * 2.5f, 1).normalized;
-        rb.linearVelocity = dir * speed;
-    }
-    else
-    {
-        // 1. Calcula a média dos vetores normais de contato
-        Vector2 normalMedia = Vector2.zero;
-        int totalContatos = col.contactCount;
-
-        for (int i = 0; i < totalContatos; i++)
+        if (col.gameObject.CompareTag("Player"))
         {
-            ContactPoint2D contato = col.GetContact(i);
-            normalMedia += contato.normal;
+            float offset = transform.position.x - col.transform.position.x;
+            float width = col.collider.bounds.size.x;
+            float hitFactor = offset / width;
+
+            Vector2 dir = new Vector2(hitFactor * 2.5f, 1).normalized;
+            rb.linearVelocity = dir * speed;
         }
+        else
+        {
+            Vector2 dir = rb.linearVelocity.normalized;
 
-        // 2. Normaliza a média para obter a direção normal efetiva
-        normalMedia.Normalize();
+            // Evita movimento muito horizontal
+            if (Mathf.Abs(dir.y) < 0.3f)
+            {
+                dir.y = 0.3f * Mathf.Sign(dir.y == 0 ? 1 : dir.y);
+                dir.Normalize();
+            }
 
-        // 3. Calcula a nova direção refletida
-        Vector2 newDirection = Vector2.Reflect(rb.linearVelocity.normalized, normalMedia).normalized;
-
-        // 4. Aplica a velocidade mantendo a magnitude constante
-        rb.linearVelocity = newDirection * speed;
-
-        // 5. Pequeno deslocamento para evitar "grudar" na parede
-        // Isso move a bola ligeiramente na direção da nova velocidade, garantindo que ela saia da superfície
-        transform.position += (Vector3)(newDirection * 0.02f);
+            rb.linearVelocity = dir * speed;
+        }
     }
-}
+
     void ResetPuck()
     {
         rb.linearVelocity = Vector2.zero;
         rb.angularVelocity = 0f;
         transform.position = startPosition;
         Launch();
+    }
+
+    void FixedUpdate()
+    {
+        rb.linearVelocity = rb.linearVelocity.normalized * speed;
     }
 }

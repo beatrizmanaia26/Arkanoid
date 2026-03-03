@@ -17,6 +17,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/fase2.unity
     guid: 81d44610765460b4e88972b67a9d4bb6
+  - enabled: 1
+    path: Assets/Scenes/telaFinal.unity
+    guid: 6dbbfd5b20cd0f8488daeabe0bdf2490
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

@@ -4,19 +4,18 @@ using UnityEngine.SceneManagement;
 public class gameManager : MonoBehaviour
 {
     public static gameManager instance;
-
-    public GUISkin layout;
-
+    public bool venceu = false;
     [Header("Pontuação")]
     public int pontos = 0;
-    public int recordePessoal = 0;
 
     [Header("Progresso da Fase")]
     public int blocosRestantes;
 
+    [Header("Vidas")]
+    public int vidas = 15;
+
     void Awake()
     {
-        // Mantém apenas uma instância e não destrói ao trocar de cena
         if (instance == null)
         {
             instance = this;
@@ -39,62 +38,63 @@ public class gameManager : MonoBehaviour
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    // Chamado automaticamente toda vez que uma cena nova carrega
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-    pontos = 0;
         blocosRestantes = FindObjectsOfType<Brick>().Length;
-        recordePessoal = PlayerPrefs.GetInt("Recorde", 0);
-        Debug.Log("Cena carregada: " + scene.name + " | Blocos: " + blocosRestantes);
-    }
 
-    public void GanharPonto()
-    {
-        pontos += 1;
-
-        if (pontos > recordePessoal)
+        if (scene.name == "fase1")
         {
-            recordePessoal = pontos;
-            PlayerPrefs.SetInt("Recorde", recordePessoal);
-            PlayerPrefs.Save();
-            Debug.Log("Novo recorde: " + recordePessoal);
+            vidas = 15;
+            pontos = 0;
         }
-
-        Debug.Log("Pontos: " + pontos);
     }
 
     public void BlocoDestruido()
     {
-        GanharPonto();
+        pontos++;
         blocosRestantes--;
-        Debug.Log("Bloco destruído! Restam: " + blocosRestantes);
 
-        if (blocosRestantes <= 0){
-        Debug.Log("BLOCOS RESTANTESSSS: " + blocosRestantes);
+        Debug.Log("Pontos: " + pontos);
+
+        if (blocosRestantes <= 0)
+        {
             ProximaFase();
         }
     }
-void ProximaFase()
-    {
-        int proximaFase = SceneManager.GetActiveScene().buildIndex + 1;
 
-        if (proximaFase < SceneManager.sceneCountInBuildSettings)
-        {
-            Debug.Log("Fase completa! Carregando próxima fase...");
-            SceneManager.LoadScene(proximaFase);
-        }
-        else
-        {
-            Debug.Log("Fim de jogo! Pontuação final: " + pontos);
-            // Aqui você pode carregar uma tela de vitória ou menu
-        }
+void ProximaFase()
+{
+    string cenaAtual = SceneManager.GetActiveScene().name;
+
+    if (cenaAtual == "fase1")
+    {
+        SceneManager.LoadScene("fase2");
     }
+    else if (cenaAtual == "fase2")
+    {
+        venceu = true;
+        SceneManager.LoadScene("telaFinal");
+    }
+}
+
+public void PerderVida()
+{
+    vidas--;
+
+    if (vidas <= 0)
+    {
+        venceu = false; 
+        SceneManager.LoadScene("telaFinal");
+    }
+}
 
     void OnGUI()
     {
-        if (layout != null)
-            GUI.skin = layout;
+        GUIStyle estilo = new GUIStyle(GUI.skin.label);
+        estilo.fontSize = 30;
+        estilo.normal.textColor = Color.white;
 
-        GUI.Label(new Rect(Screen.width / 2 - 150 - 12, 20, 100, 100), "" + pontos);
+        GUI.Label(new Rect(20, 20, 300, 40), "Vidas: " + vidas, estilo);
+        GUI.Label(new Rect(Screen.width - 200, 20, 300, 40), "Pontos: " + pontos, estilo);
     }
 }
